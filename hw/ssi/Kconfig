@@ -1,3 +1,7 @@
+config G233_SPI
+    bool
+    select SSI
+
 config PL022
     bool
     select SSI

@@ -32,6 +32,8 @@
 #include "hw/gpio/g233_gpio.h"
 #include "hw/timer/g233_pwm.h"
 #include "hw/watchdog/g233_wdt.h"
+#include "hw/ssi/g233_spi.h"
+#include "hw/ssi/ssi.h"
 #include "target/riscv/cpu.h"
 #include "hw/core/sysbus-fdt.h"
 #include "target/riscv/pmu.h"
@@ -100,6 +102,7 @@ static const MemMapEntry virt_memmap[] = {
     [VIRT_WDT] =          { 0x10010000,        0x1000 },
     [VIRT_GPIO] =         { 0x10012000,        0x1000 },
     [VIRT_PWM] =          { 0x10015000,         0x100 },
+    [VIRT_SPI] =          { 0x10018000,        0x1000 },
     [VIRT_VIRTIO] =       { 0x10001000,        0x1000 },
     [VIRT_FW_CFG] =       { 0x10100000,          0x18 },
     [VIRT_FLASH] =        { 0x20000000,     0x4000000 },
@@ -1714,6 +1717,32 @@ static void virt_machine_init(MachineState *machine)
     sysbus_create_simple(TYPE_G233_PWM,
         s->memmap[VIRT_PWM].base,
         qdev_get_gpio_in(mmio_irqchip, PWM_IRQ));
+
+    /* G233 SPI controller */
+    {
+        DeviceState *spi_dev;
+        G233SpiState *g233_spi;
+        DeviceState *flash_dev;
+        qemu_irq flash_cs;
+
+        spi_dev = sysbus_create_simple(TYPE_G233_SPI,
+            s->memmap[VIRT_SPI].base,
+            qdev_get_gpio_in(mmio_irqchip, SPI_IRQ));
+        g233_spi = G233_SPI(spi_dev);
+
+        /* W25X16 flash on CS0 */
+        flash_dev = qdev_new("w25x16");
+        qdev_realize_and_unref(flash_dev, BUS(g233_spi->spi), &error_fatal);
+        flash_cs = qdev_get_gpio_in_named(flash_dev, SSI_GPIO_CS, 0);
+        sysbus_connect_irq(SYS_BUS_DEVICE(spi_dev), 1, flash_cs);
+
+        /* W25X32 flash on CS1 */
+        flash_dev = qdev_new("w25x32");
+        qdev_prop_set_uint8(flash_dev, "cs", 1);
+        qdev_realize_and_unref(flash_dev, BUS(g233_spi->spi), &error_fatal);
+        flash_cs = qdev_get_gpio_in_named(flash_dev, SSI_GPIO_CS, 0);
+        sysbus_connect_irq(SYS_BUS_DEVICE(spi_dev), 2, flash_cs);
+    }
 
     /* VirtIO MMIO devices */
     for (i = 0; i < VIRTIO_COUNT; i++) {
