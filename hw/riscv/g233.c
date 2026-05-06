@@ -31,6 +31,7 @@
 #include "hw/char/pl011.h"
 #include "hw/gpio/g233_gpio.h"
 #include "hw/timer/g233_pwm.h"
+#include "hw/watchdog/g233_wdt.h"
 #include "target/riscv/cpu.h"
 #include "hw/core/sysbus-fdt.h"
 #include "target/riscv/pmu.h"
@@ -96,6 +97,7 @@ static const MemMapEntry virt_memmap[] = {
     [VIRT_APLIC_M] =      {  0xc000000, APLIC_SIZE(VIRT_CPUS_MAX) },
     [VIRT_APLIC_S] =      {  0xd000000, APLIC_SIZE(VIRT_CPUS_MAX) },
     [VIRT_UART0] =        { 0x10000000,         0x100 },
+    [VIRT_WDT] =          { 0x10010000,        0x1000 },
     [VIRT_GPIO] =         { 0x10012000,        0x1000 },
     [VIRT_PWM] =          { 0x10015000,         0x100 },
     [VIRT_VIRTIO] =       { 0x10001000,        0x1000 },
@@ -1697,6 +1699,11 @@ static void virt_machine_init(MachineState *machine)
 
     /* SiFive Test MMIO device */
     sifive_test_create(s->memmap[VIRT_TEST].base);
+
+    /* G233 WDT controller */
+    sysbus_create_simple(TYPE_G233_WDT,
+        s->memmap[VIRT_WDT].base,
+        qdev_get_gpio_in(mmio_irqchip, WDT_IRQ));
 
     /* G233 GPIO controller */
     sysbus_create_simple(TYPE_G233_GPIO,

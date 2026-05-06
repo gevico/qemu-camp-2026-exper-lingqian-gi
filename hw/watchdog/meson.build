@@ -1,4 +1,5 @@
 system_ss.add(files('watchdog.c'))
+system_ss.add(when: 'CONFIG_G233_WDT', if_true: files('g233_wdt.c'))
 system_ss.add(when: 'CONFIG_ALLWINNER_WDT', if_true: files('allwinner-wdt.c'))
 system_ss.add(when: 'CONFIG_CMSDK_APB_WATCHDOG', if_true: files('cmsdk-apb-watchdog.c'))
 system_ss.add(when: 'CONFIG_WDT_IB6300ESB', if_true: files('wdt_i6300esb.c'))

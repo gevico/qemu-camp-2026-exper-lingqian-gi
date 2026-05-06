@@ -1,3 +1,6 @@
+config G233_WDT
+    bool
+
 config CMSDK_APB_WATCHDOG
     bool
     select PTIMER
