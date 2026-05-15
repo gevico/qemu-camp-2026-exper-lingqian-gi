@@ -1,5 +1,7 @@
 /GNUmakefile
-/build/
+/build/*
+!/build/*.sh
+!/build/*.config
 /.cache/
 /.vscode/
 *.pyc
